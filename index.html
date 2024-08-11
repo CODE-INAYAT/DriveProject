@@ -30,19 +30,21 @@
     </div>
 
     <script>
-        const webAppUrl = 'https://script.google.com/macros/s/AKfycbydpDNxv3qAGE_ggeuMSg5xi-1MfV5cupeIpTeQuHngvFaLRnkOmXpx3CO6L6GH6Hnu/exec';
+        const webAppUrl = 'https://script.google.com/macros/s/AKfycbwstinW8jV97SMJciNFCR8Z7o3NsbrnO3O-486AOdbDubm4JU6HBaKt-dJnbg2rrYI4/exec'; // Replace with your actual web app URL
 
-        async function fetchFilesAndFolders() {
-            try {
-                showLoading(true);
-                const response = await fetch(`${webAppUrl}?action=getAllFilesAndFolders`);
-                const data = await response.json();
+        function fetchFilesAndFolders() {
+            showLoading(true);
+            const script = document.createElement('script');
+            script.src = `${webAppUrl}?action=getAllFilesAndFolders&callback=handleResponse`;
+            document.body.appendChild(script);
+        }
+
+        function handleResponse(data) {
+            showLoading(false);
+            if (data && Array.isArray(data)) {
                 displayFileTree(data);
-            } catch (error) {
-                console.error('Error fetching files and folders:', error);
+            } else {
                 showError('Failed to load files and folders. Please try again later.');
-            } finally {
-                showLoading(false);
             }
         }
 
