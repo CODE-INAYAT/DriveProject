@@ -30,21 +30,25 @@
     </div>
 
     <script>
-        const webAppUrl = 'https://script.google.com/macros/s/AKfycbwstinW8jV97SMJciNFCR8Z7o3NsbrnO3O-486AOdbDubm4JU6HBaKt-dJnbg2rrYI4/exec'; // Replace with your actual web app URL
+        const webAppUrl = 'https://script.google.com/macros/s/AKfycbzVzwDrjXTSaXp04v0xqUq-rd6aDckKf_bszgzERWutTM1epvc6TdAbi-KlXKAaCIVT/exec'; // Replace with your actual web app URL
 
-        function fetchFilesAndFolders() {
+        async function fetchFilesAndFolders() {
             showLoading(true);
-            const script = document.createElement('script');
-            script.src = `${webAppUrl}?action=getAllFilesAndFolders&callback=handleResponse`;
-            document.body.appendChild(script);
-        }
-
-        function handleResponse(data) {
-            showLoading(false);
-            if (data && Array.isArray(data)) {
-                displayFileTree(data);
-            } else {
-                showError('Failed to load files and folders. Please try again later.');
+            try {
+                const response = await fetch(`${webAppUrl}?action=getAllFilesAndFolders`, {
+                    method: 'GET',
+                    mode: 'cors',
+                });
+                const data = await response.json();
+                showLoading(false);
+                if (Array.isArray(data)) {
+                    displayFileTree(data);
+                } else {
+                    showError('Failed to load files and folders. Please try again later.');
+                }
+            } catch (error) {
+                showLoading(false);
+                showError('Error fetching files and folders: ' + error.message);
             }
         }
 
