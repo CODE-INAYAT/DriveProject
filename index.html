@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Drive File Explorer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold mb-6">Google Drive Explorer</h1>
+        <div id="loading" class="flex justify-center items-center h-32">
+            <div class="spinner"></div>
+        </div>
+        <div id="file-tree" class="bg-white p-4 rounded shadow hidden"></div>
+    </div>
+
+    <script>
+        const webAppUrl = 'https://script.google.com/macros/s/AKfycbydpDNxv3qAGE_ggeuMSg5xi-1MfV5cupeIpTeQuHngvFaLRnkOmXpx3CO6L6GH6Hnu/exec'; 
+
+        function fetchFilesAndFolders() {
+            showLoading(true);
+            const script = document.createElement('script');
+            script.src = `${webAppUrl}?action=getAllFilesAndFolders&callback=handleResponse`;
+            document.body.appendChild(script);
+        }
+
+        function handleResponse(data) {
+            showLoading(false);
+            if (data && Array.isArray(data)) {
+                displayFileTree(data);
+            } else {
+                showError('Failed to load files and folders. Please try again later.');
+            }
+        }
+
+        function showLoading(isLoading) {
+            const loadingElement = document.getElementById('loading');
+            const fileTreeElement = document.getElementById('file-tree');
+            if (isLoading) {
+                loadingElement.classList.remove('hidden');
+                fileTreeElement.classList.add('hidden');
+            } else {
+                loadingElement.classList.add('hidden');
+                fileTreeElement.classList.remove('hidden');
+            }
+        }
+
+        function showError(message) {
+            const fileTreeElement = document.getElementById('file-tree');
+            fileTreeElement.innerHTML = `<p class="text-red-500">${message}</p>`;
+            fileTreeElement.classList.remove('hidden');
+        }
+
+        function displayFileTree(items) {
+            const fileTreeElement = document.getElementById('file-tree');
+            fileTreeElement.innerHTML = '';
+
+            const tree = buildTree(items);
+            const treeHtml = renderTree(tree);
+            fileTreeElement.innerHTML = treeHtml;
+
+            // Add event listeners for folder toggling
+            document.querySelectorAll('.folder-toggle').forEach(toggle => {
+                toggle.addEventListener('click', () => {
+                    const content = toggle.nextElementSibling;
+                    content.classList.toggle('hidden');
+                    toggle.textContent = content.classList.contains('hidden') ? '▶' : '▼';
+                });
+            });
+        }
+
+        function buildTree(items) {
+            const tree = {};
+            items.forEach(item => {
+                const parts = item.path.split('/').filter(Boolean);
+                let currentLevel = tree;
+                parts.forEach((part, index) => {
+                    if (!currentLevel[part]) {
+                        currentLevel[part] = index === parts.length - 1 ? item : {};
+                    }
+                    currentLevel = currentLevel[part];
+                });
+            });
+            return tree;
+        }
+
+        function renderTree(node, indent = 0) {
+            let html = '';
+            for (const [name, item] of Object.entries(node)) {
+                const isFile = item.type === 'file';
+                const indentSpace = '  '.repeat(indent);
+                if (isFile) {
+                    html += `${indentSpace}<div class="py-1">
+                        <span class="text-blue-500">📄</span>
+                        <a href="${item.url}" class="ml-1 text-blue-500 hover:underline" target="_blank">${name}</a>
+                    </div>`;
+                } else {
+                    html += `${indentSpace}<div class="py-1">
+                        <span class="folder-toggle cursor-pointer">▼</span>
+                        <span class="ml-1 font-semibold">📁 ${name}</span>
+                        <div class="ml-4">
+                            ${renderTree(item, indent + 1)}
+                        </div>
+                    </div>`;
+                }
+            }
+            return html;
+        }
+
+        fetchFilesAndFolders();
+    </script>
+</body>
+</html>
